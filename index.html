@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC Survive · 生存服务器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg-0:#060608;
+    --bg-1:#0b0b10;
+    --bg-2:#111118;
+    --bg-3:#16161f;
+    --bg-card:rgba(22,22,31,.55);
+    --border:rgba(255,255,255,.06);
+    --border-strong:rgba(255,255,255,.12);
+    --border-gold:rgba(200,170,110,.25);
+    --text:#ececee;
+    --text-2:#a8a8b4;
+    --text-3:#666674;
+    --gold:#d4b77a;
+    --gold-soft:rgba(212,183,122,.12);
+    --gold-glow:rgba(212,183,122,.35);
+    --gold-shine:linear-gradient(135deg,#e8d5a6 0%,#d4b77a 35%,#b89a5c 65%,#d4b77a 100%);
+    --radius-xl:24px;
+    --radius-lg:16px;
+    --radius-md:12px;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg-0);
+    color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    cursor:none;
+  }
+  @media(pointer:coarse){body{cursor:auto}}
+  a{color:inherit;text-decoration:none;cursor:none}
+  @media(pointer:coarse){a{cursor:pointer}}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+
+  /* ===== CUSTOM CURSOR ===== */
+  .cursor{
+    position:fixed;top:0;left:0;z-index:9999;pointer-events:none;
+    width:8px;height:8px;border-radius:50%;background:var(--gold);
+    transform:translate(-50%,-50%);transition:transform .12s ease,width .25s,height .25s,background .25s;
+    mix-blend-mode:difference;
+  }
+  .cursor-ring{
+    position:fixed;top:0;left:0;z-index:9998;pointer-events:none;
+    width:36px;height:36px;border-radius:50%;
+    border:1px solid rgba(212,183,122,.4);
+    transform:translate(-50%,-50%);transition:transform .2s ease,width .3s,height .3s,border-color .3s,background .3s;
+  }
+  .cursor.hover{width:0;height:0}
+  .cursor-ring.hover{width:56px;height:56px;background:rgba(212,183,122,.06);border-color:rgba(212,183,122,.8)}
+  @media(pointer:coarse){.cursor,.cursor-ring{display:none}}
+
+  /* ===== ANIMATED BACKGROUND ===== */
+  .bg-layer{
+    position:fixed;inset:0;z-index:-2;overflow:hidden;background:var(--bg-0);
+  }
+  .bg-layer::before{
+    content:'';position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse 65% 55% at 75% 20%,rgba(212,183,122,.07),transparent 70%),
+      radial-gradient(ellipse 50% 40% at 10% 90%,rgba(80,100,200,.05),transparent 70%),
+      radial-gradient(ellipse 40% 35% at 55% 65%,rgba(212,183,122,.04),transparent 70%);
+  }
+  .aurora{
+    position:absolute;inset:-20%;
+    background:
+      radial-gradient(40% 30% at 30% 40%,rgba(212,183,122,.08),transparent 60%),
+      radial-gradient(35% 35% at 70% 60%,rgba(140,120,80,.06),transparent 60%),
+      radial-gradient(25% 25% at 50% 50%,rgba(60,70,120,.05),transparent 60%);
+    filter:blur(40px);
+    animation:auroraMove 20s ease-in-out infinite alternate;
+  }
+  @keyframes auroraMove{
+    0%{transform:translate(0,0) scale(1)}
+    50%{transform:translate(-3%,2%) scale(1.05)}
+    100%{transform:translate(2%,-3%) scale(1.02)}
+  }
+  .grid-overlay{
+    position:absolute;inset:0;pointer-events:none;opacity:.25;
+    background-image:
+      linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+    background-size:80px 80px;
+    mask-image:radial-gradient(ellipse 75% 75% at 50% 40%,black,transparent 85%);
+    -webkit-mask-image:radial-gradient(ellipse 75% 75% at 50% 40%,black,transparent 85%);
+  }
+  .noise{
+    position:absolute;inset:0;opacity:.025;pointer-events:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+
+  /* ===== NAV ===== */
+  nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    padding:22px 56px;
+    display:flex;justify-content:space-between;align-items:center;
+    transition:padding .35s cubic-bezier(.4,0,.2,1),background .35s,border-color .35s;
+  }
+  nav::before{
+    content:'';position:absolute;inset:0;
+    backdrop-filter:blur(0px);-webkit-backdrop-filter:blur(0px);
+    background:transparent;border-bottom:1px solid transparent;
+    transition:all .35s;z-index:-1;
+  }
+  nav.scrolled{padding:14px 56px}
+  nav.scrolled::before{
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    background:rgba(6,6,8,.75);border-bottom-color:var(--border);
+  }
+  .logo{
+    font-weight:700;font-size:15px;letter-spacing:.18em;text-transform:uppercase;
+    display:flex;align-items:center;gap:12px;color:var(--text);
+  }
+  .logo-mark{
+    width:32px;height:32px;border-radius:9px;position:relative;
+    background:var(--gold-shine);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 24px -6px var(--gold-glow);
+  }
+  .logo-mark::after{
+    content:'';width:14px;height:14px;border-radius:3px;background:var(--bg-0);
+    transform:rotate(45deg);
+  }
+  .nav-links{display:flex;gap:40px;font-size:13px;color:var(--text-2);letter-spacing:.06em}
+  .nav-links a{transition:color .25s;position:relative;padding:4px 0}
+  .nav-links a::after{
+    content:'';position:absolute;left:0;bottom:-2px;width:0;height:1px;
+    background:var(--gold);transition:width .3s cubic-bezier(.4,0,.2,1);
+  }
+  .nav-links a:hover{color:var(--gold)}
+  .nav-links a:hover::after{width:100%}
+  .nav-cta{
+    padding:10px 22px;border:1px solid var(--border-strong);border-radius:100px;
+    font-size:12.5px;color:var(--text);letter-spacing:.08em;
+    transition:all .3s cubic-bezier(.4,0,.2,1);font-weight:500;
+    background:rgba(255,255,255,.02);
+  }
+  .nav-cta:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+
+  /* ===== HERO ===== */
+  .hero{
+    min-height:100vh;display:flex;flex-direction:column;
+    justify-content:center;padding:140px 56px 100px;position:relative;
+  }
+  .hero-decor{
+    position:absolute;right:56px;top:50%;transform:translateY(-50%);
+    width:380px;height:380px;pointer-events:none;
+    opacity:.4;
+  }
+  .hero-decor .ring{
+    position:absolute;inset:0;border-radius:50%;
+    border:1px solid rgba(212,183,122,.15);
+    animation:spin 60s linear infinite;
+  }
+  .hero-decor .ring:nth-child(2){inset:30px;border-color:rgba(212,183,122,.2);animation-duration:45s;animation-direction:reverse}
+  .hero-decor .ring:nth-child(3){inset:60px;border-color:rgba(212,183,122,.25);animation-duration:30s}
+  .hero-decor .ring::after{
+    content:'';position:absolute;top:-3px;left:50%;width:6px;height:6px;
+    background:var(--gold);border-radius:50%;transform:translateX(-50%);
+    box-shadow:0 0 20px var(--gold-glow);
+  }
+  .hero-decor .ring:nth-child(2)::after{top:auto;bottom:-3px}
+  .hero-decor .ring:nth-child(3)::after{top:50%;left:auto;right:-3px;transform:translateY(-50%)}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .hero-tag{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:11px;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;font-weight:500;
+    padding:9px 18px;border:1px solid var(--border-gold);border-radius:100px;
+    margin-bottom:44px;width:fit-content;
+    background:var(--gold-soft);
+    animation:fadeUp 1s ease .05s both;
+  }
+  .hero-tag .dot{
+    width:6px;height:6px;background:#52d273;border-radius:50%;
+    box-shadow:0 0 8px #52d273;animation:pulse 2s infinite;
+  }
+  .hero h1{
+    font-size:clamp(48px,8vw,112px);font-weight:800;line-height:.98;letter-spacing:-.03em;
+    max-width:1200px;
+    animation:fadeUp 1s ease .15s both;
+  }
+  .hero h1 .line1{display:block;color:var(--text-3);font-weight:600;letter-spacing:.01em}
+  .hero h1 .line2{display:block;margin-top:4px}
+  .hero h1 .shine{
+    background:var(--gold-shine);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    background-size:200% 200%;
+    animation:shine 6s ease-in-out infinite;position:relative;
+  }
+  @keyframes shine{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+  }
+  .hero-sub{
+    margin-top:36px;max-width:620px;
+    font-size:17px;color:var(--text-2);font-weight:300;line-height:1.8;
+    animation:fadeUp 1s ease .25s both;
+  }
+  .hero-actions{
+    margin-top:56px;display:flex;gap:16px;flex-wrap:wrap;
+    animation:fadeUp 1s ease .35s both;
+  }
+  .btn-primary{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:16px 36px;border-radius:100px;
+    background:var(--gold-shine);background-size:200% 200%;
+    color:var(--bg-0);font-weight:600;font-size:13.5px;letter-spacing:.06em;
+    border:none;transition:all .4s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 12px 32px -8px var(--gold-glow);
+    animation:shine 6s ease-in-out infinite;
+  }
+  .btn-primary:hover{
+    transform:translateY(-3px);
+    box-shadow:0 20px 48px -12px var(--gold-glow);
+  }
+  .btn-ghost{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:16px 32px;border-radius:100px;
+    background:rgba(255,255,255,.03);
+    border:1px solid var(--border-strong);color:var(--text);
+    font-size:13.5px;letter-spacing:.06em;font-weight:500;
+    transition:all .35s;backdrop-filter:blur(12px);
+  }
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+  .hero-meta{
+    margin-top:72px;display:flex;gap:56px;flex-wrap:wrap;
+    animation:fadeUp 1s ease .45s both;
+    padding-top:32px;border-top:1px solid var(--border);
+  }
+  .meta-item{display:flex;flex-direction:column;gap:6px}
+  .meta-num{font-size:32px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+  .meta-num .sep{color:var(--gold)}
+  .meta-label{font-size:11px;color:var(--text-3);letter-spacing:.16em;text-transform:uppercase;font-weight:500}
+
+  /* ===== SECTIONS SHARED ===== */
+  section{padding:140px 56px;position:relative}
+  .section-head{margin-bottom:84px;max-width:1000px}
+  .section-label{
+    font-size:11px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:20px;font-weight:500;
+    display:flex;align-items:center;gap:14px;
+  }
+  .section-label::before{
+    content:'';width:40px;height:1px;background:var(--gold);
+  }
+  .section-title{
+    font-size:clamp(36px,5vw,64px);font-weight:700;
+    line-height:1.05;letter-spacing:-.02em;
+  }
+  .section-desc{
+    margin-top:20px;color:var(--text-2);max-width:640px;font-weight:300;font-size:16px;line-height:1.8;
+  }
+
+  /* ===== OVERVIEW ===== */
+  .overview{
+    background:linear-gradient(180deg,transparent,var(--bg-1) 20%,var(--bg-1) 80%,transparent);
+  }
+  .cards{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    gap:1px;background:var(--border);border:1px solid var(--border);
+    border-radius:var(--radius-xl);overflow:hidden;
+  }
+  @media(max-width:1000px){.cards{grid-template-columns:repeat(2,1fr)}}
+  .card{
+    background:linear-gradient(180deg,rgba(22,22,31,.6),rgba(14,14,20,.6));
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    padding:48px;transition:all .4s ease;position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(212,183,122,.4),transparent);
+    opacity:0;transition:opacity .4s;
+  }
+  .card:hover{background:linear-gradient(180deg,rgba(28,28,40,.7),rgba(18,18,26,.7))}
+  .card:hover::before{opacity:1}
+  .card-num{
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    color:var(--text-3);letter-spacing:.1em;margin-bottom:28px;
+  }
+  .card-icon{
+    width:48px;height:48px;border-radius:12px;
+    background:var(--gold-soft);display:flex;align-items:center;justify-content:center;
+    color:var(--gold);margin-bottom:32px;position:relative;
+  }
+  .card-icon::after{
+    content:'';position:absolute;inset:-1px;border-radius:13px;
+    background:var(--gold-shine);opacity:.1;z-index:-1;
+  }
+  .card h3{font-size:18px;font-weight:600;margin-bottom:12px;letter-spacing:-.005em}
+  .card p{color:var(--text-2);font-size:14.5px;font-weight:300;line-height:1.8}
+
+  /* ===== CONNECTION ===== */
+  .conn-card{
+    background:linear-gradient(180deg,rgba(22,22,31,.55),rgba(14,14,20,.55));
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border:1px solid var(--border);border-radius:var(--radius-xl);
+    padding:48px;position:relative;overflow:hidden;
+    transition:border-color .4s,transform .4s;
+  }
+  .conn-card:hover{border-color:var(--border-strong)}
+  .conn-card.highlight{
+    border-color:var(--border-gold);
+    background:linear-gradient(135deg,rgba(50,40,20,.5),rgba(20,20,28,.6));
+  }
+  .conn-card.highlight::before{
+    content:'';position:absolute;top:-1px;right:40px;bottom:-1px;width:1px;
+    background:linear-gradient(180deg,transparent,var(--gold),transparent);
+  }
+  .conn-type{
+    font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--gold);font-weight:500;margin-bottom:12px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .conn-type .badge{
+    padding:3px 10px;background:var(--gold-soft);border-radius:100px;
+    font-size:10px;letter-spacing:.18em;
+  }
+  .conn-title{font-size:24px;font-weight:600;margin-bottom:32px;letter-spacing:-.01em}
+  .conn-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 0;border-bottom:1px solid var(--border);
+    transition:background .2s;
+  }
+  .conn-row:last-child{border-bottom:none}
+  .conn-row:hover .conn-key{color:var(--text)}
+  .conn-key{font-size:12.5px;color:var(--text-3);letter-spacing:.04em;transition:color .2s}
+  .conn-val{
+    font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);
+    display:flex;align-items:center;gap:12px;
+  }
+  .copy-btn{
+    opacity:0;font-size:10.5px;color:var(--gold);letter-spacing:.12em;font-weight:500;
+    padding:5px 12px;border:1px solid var(--border-strong);border-radius:100px;
+    cursor:none;transition:all .25s;background:rgba(255,255,255,.02);
+    font-family:inherit;
+  }
+  @media(pointer:coarse){.copy-btn{opacity:1}}
+  .conn-row:hover .copy-btn{opacity:1}
+  .copy-btn:hover{border-color:var(--gold);background:var(--gold-soft)}
+  .conn-note{
+    margin-top:28px;padding:16px 20px;
+    background:rgba(212,183,122,.05);border:1px solid var(--border-gold);border-radius:var(--radius-md);
+    font-size:13px;color:var(--gold);line-height:1.7;
+    display:flex;gap:12px;align-items:flex-start;
+  }
+  .conn-note .icon{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+
+  /* ===== QQ GROUP SECTION ===== */
+  .qq-section{
+    margin-top:80px;padding:60px;border-radius:var(--radius-xl);
+    background:linear-gradient(135deg,rgba(22,22,31,.6),rgba(14,14,20,.6));
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border:1px solid var(--border);
+    position:relative;overflow:hidden;
+    display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;
+  }
+  .qq-section::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  }
+  .qq-left h3{font-size:28px;font-weight:700;margin-bottom:12px;letter-spacing:-.015em}
+  .qq-left p{color:var(--text-2);font-weight:300;line-height:1.8;font-size:15px}
+  .qq-right{
+    display:flex;align-items:center;gap:28px;
+    padding:32px;background:rgba(255,255,255,.02);border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+  }
+  .qq-avatar{
+    width:72px;height:72px;border-radius:16px;flex-shrink:0;
+    background:linear-gradient(135deg,#12b7f5,#0d9de6);
+    display:flex;align-items:center;justify-content:center;
+    color:white;font-weight:800;font-size:28px;
+    box-shadow:0 12px 32px -8px rgba(18,183,245,.4);
+    position:relative;
+  }
+  .qq-avatar::after{
+    content:'';position:absolute;bottom:-2px;right:-2px;
+    width:20px;height:20px;border-radius:50%;background:#52d273;
+    border:3px solid var(--bg-card);
+  }
+  .qq-info{flex:1;min-width:0}
+  .qq-info .label{font-size:11px;color:var(--text-3);letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px}
+  .qq-info .gc{
+    font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;
+    letter-spacing:.04em;color:var(--text);
+  }
+  .qq-actions{display:flex;flex-direction:column;gap:10px}
+  .qq-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:12px 22px;border-radius:100px;font-size:12.5px;font-weight:600;letter-spacing:.06em;
+    transition:all .3s;border:none;cursor:none;font-family:inherit;
+    text-decoration:none;
+  }
+  .qq-btn.primary{
+    background:linear-gradient(135deg,#12b7f5,#0d9de6);color:white;
+    box-shadow:0 8px 24px -8px rgba(18,183,245,.5);
+  }
+  .qq-btn.primary:hover{transform:translateY(-2px);box-shadow:0 14px 32px -10px rgba(18,183,245,.6)}
+  .qq-btn.ghost{
+    background:transparent;color:var(--text-2);border:1px solid var(--border-strong);
+  }
+  .qq-btn.ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+  /* ===== TOOLS ===== */
+  .tools{
+    background:linear-gradient(180deg,var(--bg-1),transparent);
+  }
+  .tools-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+  }
+  @media(max-width:1000px){.tools-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:620px){.tools-grid{grid-template-columns:1fr}}
+  .tool-item{
+    display:flex;align-items:center;gap:22px;
+    padding:32px;background:linear-gradient(180deg,rgba(22,22,31,.5),rgba(14,14,20,.5));
+    backdrop-filter:blur(20px);
+    border:1px solid var(--border);border-radius:var(--radius-lg);
+    transition:all .4s cubic-bezier(.4,0,.2,1);
+    position:relative;overflow:hidden;
+  }
+  .tool-item::before{
+    content:'';position:absolute;inset:0;border-radius:inherit;
+    background:radial-gradient(400px circle at var(--mx,50%) var(--my,50%),rgba(212,183,122,.08),transparent 40%);
+    opacity:0;transition:opacity .4s;pointer-events:none;
+  }
+  .tool-item:hover{border-color:var(--border-strong);transform:translateY(-3px)}
+  .tool-item:hover::before{opacity:1}
+  .tool-icon{
+    width:52px;height:52px;border-radius:14px;flex-shrink:0;
+    background:var(--gold-soft);color:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;letter-spacing:.02em;
+    position:relative;z-index:1;
+  }
+  .tool-info{flex:1;min-width:0;position:relative;z-index:1}
+  .tool-name{font-size:15.5px;font-weight:600;margin-bottom:6px;letter-spacing:-.005em}
+  .tool-desc{font-size:12.5px;color:var(--text-2);font-weight:300;line-height:1.6}
+  .tool-desc.mono{font-size:11.5px;opacity:.8}
+  .tool-arrow{color:var(--text-3);transition:all .3s;position:relative;z-index:1;font-size:18px}
+  .tool-item:hover .tool-arrow{color:var(--gold);transform:translateX(4px)}
+
+  /* ===== RULES ===== */
+  .rules-list{max-width:880px}
+  .rule-item{
+    display:grid;grid-template-columns:80px 1fr;gap:32px;
+    padding:32px 0;border-bottom:1px solid var(--border);
+    transition:background .3s;
+  }
+  .rule-item:first-child{padding-top:8px}
+  .rule-item:last-child{border-bottom:none}
+  .rule-num{
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    color:var(--gold);padding-top:6px;letter-spacing:.08em;
+    position:relative;
+  }
+  .rule-num::before{
+    content:'';position:absolute;top:0;left:0;width:24px;height:1px;background:var(--gold);opacity:.3;
+  }
+  .rule-content h4{font-size:17px;font-weight:600;margin-bottom:10px;letter-spacing:-.005em}
+  .rule-content p{font-size:14.5px;color:var(--text-2);font-weight:300;line-height:1.8}
+
+  /* ===== JOIN CTA ===== */
+  .join{
+    text-align:center;padding:180px 56px;position:relative;overflow:hidden;
+  }
+  .join::before{
+    content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:800px;height:800px;border-radius:50%;
+    background:radial-gradient(circle,rgba(212,183,122,.12),transparent 60%);
+    filter:blur(20px);pointer-events:none;
+  }
+  .join .section-label{justify-content:center}
+  .join .section-label::before{display:none}
+  .join .section-title{margin:0 auto 28px;position:relative}
+  .join-desc{color:var(--text-2);max-width:520px;margin:0 auto 56px;font-weight:300;font-size:15px;position:relative}
+  .join-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;position:relative}
+
+  /* ===== FOOTER ===== */
+  footer{
+    padding:80px 56px 40px;border-top:1px solid var(--border);
+  }
+  .foot-main{
+    display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:60px;margin-bottom:60px;
+  }
+  @media(max-width:900px){.foot-main{grid-template-columns:1fr 1fr;gap:40px}}
+  .foot-brand .foot-logo{font-size:15px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+  .foot-brand p{color:var(--text-3);font-size:13px;line-height:1.8;font-weight:300;max-width:300px}
+  .foot-col h5{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-3);margin-bottom:20px;font-weight:500}
+  .foot-col a{display:block;color:var(--text-2);font-size:13px;padding:6px 0;transition:color .25s}
+  .foot-col a:hover{color:var(--gold)}
+  .foot-bottom{
+    display:flex;justify-content:space-between;align-items:center;
+    padding-top:32px;border-top:1px solid var(--border);
+    color:var(--text-3);font-size:12px;
+  }
+  .foot-bottom span{letter-spacing:.04em}
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeUp{
+    from{opacity:0;transform:translateY(24px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.5;transform:scale(1.2)}
+  }
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity 1s cubic-bezier(.2,.7,.2,1),transform 1s cubic-bezier(.2,.7,.2,1)}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+  .reveal.delay-1{transition-delay:.1s}
+  .reveal.delay-2{transition-delay:.2s}
+  .reveal.delay-3{transition-delay:.3s}
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:900px){
+    nav{padding:16px 28px}
+    nav.scrolled{padding:12px 28px}
+    .nav-links{display:none}
+    .hero{padding:100px 28px 80px}
+    .hero-decor{display:none}
+    section{padding:100px 28px}
+    .join{padding:120px 28px}
+    .qq-section{grid-template-columns:1fr;padding:40px 28px;gap:28px}
+    .qq-right{flex-direction:column;text-align:left}
+    footer{padding:60px 28px 32px}
+    .foot-bottom{flex-direction:column;gap:16px;text-align:center}
+  }
+
+  /* ===== TOAST ===== */
+  .toast{
+    position:fixed;bottom:40px;left:50%;transform:translate(-50%,20px);
+    background:rgba(22,22,31,.95);backdrop-filter:blur(24px);
+    border:1px solid var(--border-gold);color:var(--gold);
+    padding:14px 28px;border-radius:100px;font-size:13px;font-weight:500;letter-spacing:.04em;
+    opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.2,.7,.2,1);
+    z-index:200;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- BACKGROUND -->
+<div class="bg-layer">
+  <div class="aurora"></div>
+  <div class="grid-overlay"></div>
+  <div class="noise"></div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="logo">
+    <span class="logo-mark"></span>
+    MC · Survive
+  </div>
+  <div class="nav-links">
+    <a href="#overview">服务器</a>
+    <a href="#connect">加入</a>
+    <a href="#qq">QQ 群</a>
+    <a href="#tools">工具</a>
+    <a href="#rules">规则</a>
+  </div>
+  <a href="#connect" class="nav-cta">立即加入</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-decor" aria-hidden="true">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+  </div>
+  <div class="hero-tag"><span class="dot"></span>在线 · Java × Bedrock 跨平台生存</div>
+  <h1>
+    <span class="line1">MINECRAFT SURVIVAL SERVER</span>
+    <span class="line2">在方块世界里<span class="shine">生存</span>。</span>
+  </h1>
+  <p class="hero-sub">
+    一个纯净、无 Mod、跨平台的 Minecraft 生存服务器。
+    从 1.16.5 到 1.21.11，Java 与基岩版玩家共享同一个世界。
+  </p>
+  <div class="hero-actions">
+    <a href="#connect" class="btn-primary">
+      连接服务器
+      <span>→</span>
+    </a>
+    <a href="#qq" class="btn-ghost">
+      加入 QQ 群 · 661059536
+    </a>
+  </div>
+  <div class="hero-meta">
+    <div class="meta-item"><span class="meta-num">1.16.5 <span class="sep">→</span> 1.21.11</span><span class="meta-label">支持版本</span></div>
+    <div class="meta-item"><span class="meta-num">Java × Bedrock</span><span class="meta-label">双端互通</span></div>
+    <div class="meta-item"><span class="meta-num">ZeroTier + FRP</span><span class="meta-label">双通道接入</span></div>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section id="overview" class="overview">
+  <div class="section-head reveal">
+    <div class="section-label">Overview · 服务器概览</div>
+    <h2 class="section-title">为纯粹的生存体验而打造。</h2>
+    <p class="section-desc">无 Mod 加载器，无功能性插件。保留 Minecraft 原版风味，让每一次挖矿、每一次建造都原汁原味。</p>
+  </div>
+  <div class="cards reveal">
+    <div class="card">
+      <div class="card-num">01 / ORIGINAL</div>
+      <div class="card-icon">◆</div>
+      <h3>原版生存</h3>
+      <p>无 Mod、无插件负载，完整保留 Minecraft 原生生存体验。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">02 / CROSS-PLAY</div>
+      <div class="card-icon">◇</div>
+      <h3>跨平台互联</h3>
+      <p>Java 版与国际基岩版共用同一服务器，手机电脑皆可加入。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">03 / VERSATILE</div>
+      <div class="card-icon">◇</div>
+      <h3>全版本支持</h3>
+      <p>支持从 1.16.5 到 1.21.11 的所有 Java 版本客户端直连。</p>
+    </div>
+    <div class="card">
+      <div class="card-num">04 / PRIVATE</div>
+      <div class="card-icon">◇</div>
+      <h3>私密网络</h3>
+      <p>ZeroTier 专属局域网，低延迟、高安全，营造纯净游戏环境。</p>
+    </div>
+  </div>
+</section>
+
+<!-- CONNECTION -->
+<section id="connect">
+  <div class="section-head reveal">
+    <div class="section-label">Connection · 加入方式</div>
+    <h2 class="section-title">两种路径，选择适合你的方式。</h2>
+    <p class="section-desc">ZeroTier 内网延迟最低；公网 FRP 地址可直接使用。Java 版与基岩版共用同一存档。</p>
+  </div>
+
+  <div class="reveal">
+    <div class="conn-block" style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <div class="conn-card highlight">
+        <div class="conn-type"><span class="badge">推荐</span> ZeroTier 内网</div>
+        <div class="conn-title">加入专属局域网</div>
+        <div class="conn-row">
+          <span class="conn-key">NETWORK ID</span>
+          <span class="conn-val mono">2873fd00f2fd987c
+            <button class="copy-btn" onclick="copyText('2873fd00f2fd987c')">COPY</button>
+          </span>
+        </div>
+        <div class="conn-row">
+          <span class="conn-key">SERVER ADDRESS</span>
+          <span class="conn-val mono">10.60.48.24:25565
+            <button class="copy-btn" onclick="copyText('10.60.48.24:25565')">COPY</button>
+          </span>
+        </div>
+        <div class="conn-note">
+          <span class="icon">!</span>
+          <span>加入 ZeroTier 网络后需等待管理员授权，方可进入服务器。</span>
+        </div>
+      </div>
+
+      <div class="conn-card">
+        <div class="conn-type">Java 版 · 公网直连</div>
+        <div class="conn-title">FRP 中转地址</div>
+        <div class="conn-row">
+          <span class="conn-key">FRP HOST</span>
+          <span class="conn-val mono">cn-wh.starryfrp.com:52274
+            <button class="copy-btn" onclick="copyText('cn-wh.starryfrp.com:52274')">COPY</button>
+          </span>
+        </div>
+        <div class="conn-row">
+          <span class="conn-key">PUBLIC IP</span>
+          <span class="conn-val mono">8.162.5.68:52274
+            <button class="copy-btn" onclick="copyText('8.162.5.68:52274')">COPY</button>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="conn-block" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px">
+      <div class="conn-card">
+        <div class="conn-type">国际基岩版 · 公网</div>
+        <div class="conn-title">Bedrock 服务器</div>
+        <div class="conn-row">
+          <span class="conn-key">FRP HOST</span>
+          <span class="conn-val mono">cn-xy.starryfrp.com:19076
+            <button class="copy-btn" onclick="copyText('cn-xy.starryfrp.com:19076')">COPY</button>
+          </span>
+        </div>
+        <div class="conn-row">
+          <span class="conn-key">PUBLIC IP</span>
+          <span class="conn-val mono">111.170.175.250:19076
+            <button class="copy-btn" onclick="copyText('111.170.175.250:19076')">COPY</button>
+          </span>
+        </div>
+        <div class="conn-note">
+          <span class="icon">!</span>
+          <span>Java 版与基岩版玩家在同一世界中共同游玩。</span>
+        </div>
+      </div>
+      <div class="conn-card" style="display:flex;flex-direction:column;justify-content:center">
+        <div class="conn-type">TIPS · 连接小贴士</div>
+        <div style="color:var(--text-2);font-size:14px;font-weight:300;line-height:2">
+          遇到连接超时或卡顿？优先尝试 ZeroTier 内网——它为服务器提供了专属的低延迟通道，体验更为流畅稳定。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QQ GROUP -->
+  <div id="qq" class="qq-section reveal" style="margin-top:48px">
+    <div class="qq-left">
+      <div class="section-label" style="margin-bottom:16px">QQ COMMUNITY</div>
+      <h3>加入我们的玩家社群</h3>
+      <p>服务器日常交流、活动通知、ZeroTier 授权申请——都在群里。点击下方按钮即可一键跳转 QQ。</p>
+    </div>
+    <div class="qq-right">
+      <div class="qq-avatar">MC</div>
+      <div class="qq-info">
+        <div class="label">QQ 群号</div>
+        <div class="gc">661059536</div>
+      </div>
+      <div class="qq-actions">
+        <a href="https://qm.qq.com/cgi-bin/qm/qr?group_code=661059536" target="_blank" rel="noopener" class="qq-btn primary">加入 QQ 群 ↗</a>
+        <button class="qq-btn ghost" onclick="copyText('661059536')">复制群号</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLS -->
+<section id="tools" class="tools">
+  <div class="section-head reveal">
+    <div class="section-label">Tools · 你可能需要的工具</div>
+    <h2 class="section-title">启动器与 ZeroTier 下载。</h2>
+    <p class="section-desc">为不同平台的玩家准备了对应的启动器和 ZeroTier 下载入口。</p>
+  </div>
+  <div class="tools-grid reveal">
+    <a href="https://pan.quark.cn/s/f06d62333e76" target="_blank" rel="noopener" class="tool-item">
+      <div class="tool-icon">PCL</div>
+      <div class="tool-info">
+        <div class="tool-name">PCL 启动器</div>
+        <div class="tool-desc">仅电脑使用 · 简洁轻量的 Minecraft Launcher</div>
+      </div>
+      <span class="tool-arrow">→</span>
+    </a>
+    <a href="https://foldcraftlauncher.cn/#tab2" target="_blank" rel="noopener" class="tool-item">
+      <div class="tool-icon">FCL</div>
+      <div class="tool-info">
+        <div class="tool-name">FCL 启动器</div>
+        <div class="tool-desc">仅手机使用 · 架构推荐 arm64-v8a</div>
+      </div>
+      <span class="tool-arrow">→</span>
+    </a>
+    <a href="https://download.zerotier.com/dist/ZeroTier%20One.msi" target="_blank" rel="noopener" class="tool-item">
+      <div class="tool-icon">Z</div>
+      <div class="tool-info">
+        <div class="tool-name">ZeroTier · Windows</div>
+        <div class="tool-desc">MSI 安装包，一键加入虚拟局域网</div>
+      </div>
+      <span class="tool-arrow">→</span>
+    </a>
+    <a href="https://play.google.com/store/apps/details?id=com.zerotier.one" target="_blank" rel="noopener" class="tool-item">
+      <div class="tool-icon">Z</div>
+      <div class="tool-info">
+        <div class="tool-name">ZeroTier · Android</div>
+        <div class="tool-desc">Google Play 官方应用</div>
+      </div>
+      <span class="tool-arrow">→</span>
+    </a>
+    <div class="tool-item" onclick="copyText('curl -s https://install.zerotier.com | sudo bash')">
+      <div class="tool-icon">Z</div>
+      <div class="tool-info">
+        <div class="tool-name">ZeroTier · Linux</div>
+        <div class="tool-desc mono">curl -s https://install.zerotier.com | sudo bash</div>
+      </div>
+      <span class="tool-arrow">→</span>
+    </div>
+    <a href="#qq" class="tool-item">
+      <div class="tool-icon" style="background:rgba(18,183,245,.15);color:#12b7f5">QQ</div>
+      <div class="tool-info">
+        <div class="tool-name">加入 QQ 群</div>
+        <div class="tool-desc">群号 661059536 · 点击跳转</div>
+      </div>
+      <span class="tool-arrow">→</span>
+    </a>
+  </div>
+</section>
+
+<!-- RULES -->
+<section id="rules">
+  <div class="section-head reveal">
+    <div class="section-label">Rules · 群规与守则</div>
+    <h2 class="section-title">共建一个友好、和平的社区。</h2>
+    <p class="section-desc">进入服务器与群组，5 分钟后默认你已完整阅读以下公告。愿世界和平。</p>
+  </div>
+  <div class="rules-list reveal">
+    <div class="rule-item">
+      <div class="rule-num">01 / SPEECH</div>
+      <div class="rule-content">
+        <h4>禁止敏感内容</h4>
+        <p>禁止讨论政治敏感话题；禁止传播暴力、血腥、恶心、色情、淫秽的图片、视频及过于露骨的消息。</p>
+      </div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-num">02 / RESPECT</div>
+      <div class="rule-content">
+        <h4>禁止人身攻击</h4>
+        <p>不允许无故人身攻击、谩骂、侮辱他人；尽量避免辱骂、争吵以及引起他人不适的言行。</p>
+      </div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-num">03 / MODERATION</div>
+      <div class="rule-content">
+        <h4>管理员有权管理</h4>
+        <p>群主和管理员有义务依照群规管理群员，根据情节严重程度进行禁言、踢出或加入黑名单。</p>
+      </div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-num">04 / SPAM</div>
+      <div class="rule-content">
+        <h4>禁止无效刷屏</h4>
+        <p>连续发送 6 条或以上相同/相似的无意义信息与图片视为刷屏，触犯后依次加重处罚（群文化内容除外）。</p>
+      </div>
+    </div>
+    <div class="rule-item">
+      <div class="rule-num">05 / PEACE</div>
+      <div class="rule-content">
+        <h4>热爱和平</h4>
+        <p>本群虽以战争为题材，但仍保持热爱和平的决心。私下个人纠纷与组织事件与本群无关，请当面解决。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JOIN CTA -->
+<section class="join reveal">
+  <div class="section-label">READY TO BEGIN?</div>
+  <h2 class="section-title">拿起你的镐子。<br>我们在方块世界等你。</h2>
+  <p class="join-desc">加入 ZeroTier 网络 · 获取服务器地址 · 启动 Minecraft</p>
+  <div class="join-actions">
+    <a href="#connect" class="btn-primary">查看连接方式 →</a>
+    <a href="https://qm.qq.com/cgi-bin/qm/qr?group_code=661059536" target="_blank" rel="noopener" class="btn-ghost">加入 QQ 群</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-main">
+    <div class="foot-brand">
+      <div class="foot-logo"><span class="logo-mark" style="width:24px;height:24px;border-radius:7px"></span>MC · Survive</div>
+      <p>一个纯净的 Minecraft 生存服务器社区。Java × Bedrock 跨平台互联，原版无 Mod，共建友好和平的玩家社群。</p>
+    </div>
+    <div class="foot-col">
+      <h5>服务器</h5>
+      <a href="#overview">服务器概览</a>
+      <a href="#connect">连接方式</a>
+      <a href="#tools">下载工具</a>
+    </div>
+    <div class="foot-col">
+      <h5>社群</h5>
+      <a href="#qq">QQ 群</a>
+      <a href="#rules">群规守则</a>
+    </div>
+    <div class="foot-col">
+      <h5>服务器地址</h5>
+      <a href="#connect" class="mono" style="font-size:12px">10.60.48.24:25565</a>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>&copy; 2026 MC SURVIVE SERVER</span>
+    <span>愿世界和平 · PEACE THROUGH BLOCKS</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ===== CUSTOM CURSOR =====
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx=0,my=0,rx=0,ry=0;
+  document.addEventListener('mousemove',e=>{
+    mx=e.clientX;my=e.clientY;
+    cursor.style.transform=`translate(${mx}px,${my}px) translate(-50%,-50%)`;
+  });
+  function ringAnim(){
+    rx+=(mx-rx)*.18;ry+=(my-ry)*.18;
+    ring.style.transform=`translate(${rx}px,${ry}px) translate(-50%,-50%)`;
+    requestAnimationFrame(ringAnim);
+  }
+  ringAnim();
+  document.querySelectorAll('a,button,.tool-item,.conn-row,.qq-btn').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{cursor.classList.add('hover');ring.classList.add('hover')});
+    el.addEventListener('mouseleave',()=>{cursor.classList.remove('hover');ring.classList.remove('hover')});
+  });
+
+  // ===== TOOL ITEM RIPPLE =====
+  document.querySelectorAll('.tool-item').forEach(item=>{
+    item.addEventListener('mousemove',e=>{
+      const r=item.getBoundingClientRect();
+      item.style.setProperty('--mx',(e.clientX-r.left)+'px');
+      item.style.setProperty('--my',(e.clientY-r.top)+'px');
+    });
+  });
+
+  // ===== NAV =====
+  const nav=document.getElementById('nav');
+  window.addEventListener('scroll',()=>{
+    nav.classList.toggle('scrolled',window.scrollY>30);
+  });
+
+  // ===== COPY =====
+  function copyText(t){
+    navigator.clipboard.writeText(t).then(()=>showToast('✓ 已复制到剪贴板'))
+      .catch(()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('✓ 已复制')});
+  }
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer=setTimeout(()=>t.classList.remove('show'),1800);
+  }
+
+  // ===== REVEAL =====
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  },{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
