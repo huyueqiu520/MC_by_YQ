@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>支持 MC Survive · 给狐狐一点奖励</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg-0:#060608;
+    --bg-1:#0b0b10;
+    --bg-2:#111118;
+    --bg-3:#16161f;
+    --border:rgba(255,255,255,.06);
+    --border-strong:rgba(255,255,255,.12);
+    --border-gold:rgba(200,170,110,.25);
+    --text:#ececee;
+    --text-2:#a8a8b4;
+    --text-3:#666674;
+    --gold:#d4b77a;
+    --gold-soft:rgba(212,183,122,.12);
+    --gold-glow:rgba(212,183,122,.35);
+    --gold-shine:linear-gradient(135deg,#e8d5a6 0%,#d4b77a 35%,#b89a5c 65%,#d4b77a 100%);
+    --radius-xl:24px;
+    --radius-lg:16px;
+    --radius-md:12px;
+  }
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg-0);color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+    overflow-x:hidden;min-height:100vh;
+  }
+  a{color:inherit;text-decoration:none}
+
+  /* Background */
+  .bg-layer{position:fixed;inset:0;z-index:-2;overflow:hidden;background:var(--bg-0)}
+  .bg-layer::before{
+    content:'';position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse 65% 55% at 75% 20%,rgba(212,183,122,.07),transparent 70%),
+      radial-gradient(ellipse 50% 40% at 10% 90%,rgba(80,100,200,.05),transparent 70%),
+      radial-gradient(ellipse 40% 35% at 55% 65%,rgba(212,183,122,.04),transparent 70%);
+  }
+  .aurora{
+    position:absolute;inset:-20%;
+    background:
+      radial-gradient(40% 30% at 30% 40%,rgba(212,183,122,.1),transparent 60%),
+      radial-gradient(35% 35% at 70% 60%,rgba(140,120,80,.07),transparent 60%),
+      radial-gradient(25% 25% at 50% 50%,rgba(60,70,120,.05),transparent 60%);
+    filter:blur(40px);
+    animation:auroraMove 20s ease-in-out infinite alternate;
+  }
+  @keyframes auroraMove{
+    0%{transform:translate(0,0) scale(1)}
+    50%{transform:translate(-3%,2%) scale(1.05)}
+    100%{transform:translate(2%,-3%) scale(1.02)}
+  }
+  .grid-overlay{
+    position:absolute;inset:0;pointer-events:none;opacity:.25;
+    background-image:
+      linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+    background-size:80px 80px;
+    mask-image:radial-gradient(ellipse 75% 75% at 50% 40%,black,transparent 85%);
+    -webkit-mask-image:radial-gradient(ellipse 75% 75% at 50% 40%,black,transparent 85%);
+  }
+
+  /* Back nav */
+  .top-nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    padding:20px 56px;display:flex;justify-content:space-between;align-items:center;
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    background:rgba(6,6,8,.6);border-bottom:1px solid var(--border);
+  }
+  .back-link{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:13px;color:var(--text-2);letter-spacing:.04em;font-weight:500;
+    transition:color .25s;
+  }
+  .back-link:hover{color:var(--gold)}
+  .back-link .arrow{
+    width:28px;height:28px;border-radius:50%;
+    border:1px solid var(--border-strong);display:inline-flex;align-items:center;justify-content:center;
+    transition:border-color .25s,background .25s,transform .25s;
+  }
+  .back-link:hover .arrow{border-color:var(--gold);background:var(--gold-soft);transform:translateX(-3px)}
+  .page-tag{
+    font-size:10.5px;color:var(--gold);letter-spacing:.28em;text-transform:uppercase;font-weight:500;
+    padding:6px 14px;border:1px solid var(--border-gold);border-radius:100px;background:var(--gold-soft);
+  }
+
+  /* Main */
+  main{
+    padding:140px 56px 80px;max-width:1100px;margin:0 auto;
+    display:flex;flex-direction:column;align-items:center;
+  }
+
+  .hero-text{text-align:center;margin-bottom:64px;max-width:640px}
+  .hero-text .label{
+    font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);font-weight:500;
+    margin-bottom:24px;display:inline-flex;align-items:center;gap:14px;
+  }
+  .hero-text .label::before,.hero-text .label::after{
+    content:'';width:40px;height:1px;background:var(--gold);opacity:.5;
+  }
+  .hero-text h1{
+    font-size:clamp(40px,6vw,72px);font-weight:800;line-height:1.05;letter-spacing:-.025em;
+    margin-bottom:20px;
+  }
+  .hero-text h1 .shine{
+    background:var(--gold-shine);-webkit-background-clip:text;background-clip:text;color:transparent;
+    background-size:200% 200%;animation:shine 6s ease-in-out infinite;
+  }
+  @keyframes shine{
+    0%,100%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+  }
+  .hero-text p{
+    color:var(--text-2);font-size:16px;font-weight:300;line-height:1.9;
+  }
+
+  /* QR Card */
+  .qr-card{
+    display:grid;grid-template-columns:auto 1fr;gap:64px;align-items:center;
+    padding:64px 72px;border-radius:var(--radius-xl);
+    background:linear-gradient(135deg,rgba(22,22,31,.7),rgba(14,14,20,.7));
+    backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+    border:1px solid var(--border-gold);
+    position:relative;overflow:hidden;
+    box-shadow:0 32px 80px -20px rgba(0,0,0,.6),0 0 120px -40px var(--gold-glow);
+    transition:transform .5s cubic-bezier(.4,0,.2,1),box-shadow .5s;
+  }
+  .qr-card:hover{transform:translateY(-4px);box-shadow:0 40px 100px -20px rgba(0,0,0,.7),0 0 160px -40px var(--gold-glow)}
+  .qr-card::before{
+    content:'';position:absolute;top:-1px;left:40%;right:40%;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  }
+  .qr-card::after{
+    content:'';position:absolute;bottom:-1px;left:30%;right:30%;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.5;
+  }
+
+  .qr-wrap{
+    position:relative;width:280px;height:280px;flex-shrink:0;
+  }
+  .qr-wrap::before{
+    content:'';position:absolute;inset:-8px;border-radius:calc(var(--radius-lg) + 8px);
+    background:linear-gradient(135deg,rgba(212,183,122,.4),rgba(212,183,122,.15),rgba(212,183,122,.3));
+    z-index:-1;filter:blur(12px);opacity:.6;
+  }
+  .qr-inner{
+    width:100%;height:100%;border-radius:var(--radius-lg);
+    background:var(--bg-0);
+    padding:20px;
+    border:1px solid rgba(212,183,122,.2);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .qr-inner img{
+    width:100%;height:100%;object-fit:contain;border-radius:6px;
+  }
+  .qr-caption{
+    text-align:center;margin-top:16px;
+    font-size:11px;color:var(--text-3);letter-spacing:.18em;text-transform:uppercase;font-weight:500;
+  }
+
+  .info-col{max-width:380px}
+  .info-col .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);font-weight:500;
+    padding:7px 16px;border:1px solid var(--border-gold);border-radius:100px;background:var(--gold-soft);
+    margin-bottom:28px;
+  }
+  .info-col h2{
+    font-size:34px;font-weight:700;margin-bottom:16px;letter-spacing:-.015em;
+  }
+  .info-col h2 .shine{
+    background:var(--gold-shine);-webkit-background-clip:text;background-clip:text;color:transparent;
+    background-size:200% 200%;animation:shine 6s ease-in-out infinite;
+  }
+  .info-col .desc{
+    color:var(--text-2);font-size:15px;font-weight:300;line-height:1.9;margin-bottom:32px;
+  }
+  .info-col ul{list-style:none;margin-bottom:36px}
+  .info-col ul li{
+    color:var(--text-3);font-size:13px;font-weight:300;padding:8px 0;
+    display:flex;align-items:flex-start;gap:12px;line-height:1.6;
+  }
+  .info-col ul li .dot{
+    flex-shrink:0;width:18px;height:18px;border-radius:50%;
+    background:var(--gold-soft);border:1px solid var(--border-gold);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--gold);font-size:10px;font-weight:600;margin-top:2px;
+  }
+  .info-col .actions{display:flex;gap:14px;flex-wrap:wrap}
+  .btn-primary{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:15px 32px;border-radius:100px;
+    background:var(--gold-shine);background-size:200% 200%;
+    color:var(--bg-0);font-weight:600;font-size:13px;letter-spacing:.06em;
+    border:none;transition:all .4s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 10px 28px -8px var(--gold-glow);animation:shine 6s ease-in-out infinite;
+    cursor:pointer;font-family:inherit;
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px -12px var(--gold-glow)}
+  .btn-ghost{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:14px 28px;border-radius:100px;
+    background:rgba(255,255,255,.02);
+    border:1px solid var(--border-strong);color:var(--text);
+    font-size:13px;letter-spacing:.06em;font-weight:500;
+    transition:all .35s;backdrop-filter:blur(12px);cursor:pointer;font-family:inherit;
+  }
+  .btn-ghost:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+
+  /* Footer quote */
+  .quote{
+    margin-top:72px;text-align:center;max-width:520px;
+  }
+  .quote .line{
+    width:60px;height:1px;background:var(--gold);margin:0 auto 24px;opacity:.6;
+  }
+  .quote p{
+    color:var(--text-3);font-size:14px;font-weight:300;line-height:2;letter-spacing:.04em;
+    font-style:italic;
+  }
+  .quote .sign{
+    margin-top:20px;color:var(--gold);font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;
+  }
+
+  @media(max-width:900px){
+    main{padding:110px 24px 60px}
+    .qr-card{grid-template-columns:1fr;padding:48px 32px;gap:40px;text-align:center}
+    .qr-wrap{width:220px;height:220px;margin:0 auto}
+    .info-col{max-width:none}
+    .info-col ul li{text-align:left}
+    .info-col .actions{justify-content:center}
+    .top-nav{padding:16px 24px}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-layer">
+  <div class="aurora"></div>
+  <div class="grid-overlay"></div>
+</div>
+
+<nav class="top-nav">
+  <a href="index.html" class="back-link">
+    <span class="arrow">←</span>
+    返回服务器首页
+  </a>
+  <span class="page-tag">SPONSOR · 赞赏支持</span>
+</nav>
+
+<main>
+  <div class="hero-text">
+    <div class="label">给狐狐一点奖励吧 ~</div>
+    <h1>你的支持是<span class="shine">最好的燃料</span>。</h1>
+    <p>MC Survive 完全免费、无广告、无强制签到。服务器由个人维护，FRP 带宽、ZeroTier 节点与硬件都有持续成本。<br>每一份小额赞赏，都直接用于让世界更和平、让方块更持久。</p>
+  </div>
+
+  <div class="qr-card">
+    <div class="qr-wrap">
+      <div class="qr-inner">
+        <img src="assets/reward.png" alt="微信赞赏码">
+      </div>
+      <div class="qr-caption">WECHAT · SCAN TO SUPPORT</div>
+    </div>
+    <div class="info-col">
+      <div class="badge">✦ 微信扫码 · 自愿支持</div>
+      <h2>让服务器<span class="shine">跑得更久</span></h2>
+      <p class="desc">从 1.16.5 到 1.21.11，从 Java 到基岩版。感谢每一位让这个世界运转起来的玩家，也感谢每一份愿意让它继续运转下去的心意。</p>
+      <ul>
+        <li><span class="dot">✓</span>赞赏完全自愿，不影响任何游戏体验与服务器权限</li>
+        <li><span class="dot">✓</span>不收集玩家隐私，不做二次分发，结果文件定时销毁</li>
+        <li><span class="dot">✓</span>所有费用透明，用于 FRP 带宽、ZeroTier 节点与硬件</li>
+      </ul>
+      <div class="actions">
+        <a href="index.html#qq" class="btn-primary">进 QQ 群一起玩 →</a>
+        <a href="index.html" class="btn-ghost">回首页</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="quote">
+    <div class="line"></div>
+    <p>"愿世界和平。愿每一次挖矿都有回音，每一次建造都有人看见。"</p>
+    <div class="sign">— PEACE THROUGH BLOCKS —</div>
+  </div>
+</main>
+
+</body>
+</html>
